@@ -33,19 +33,6 @@ describe("solana-limit-order", () => {
     console.log(program.provider.wallet.publicKey)
     console.log('-----------> 3');
     console.log(anchor.web3.SystemProgram.programId)
-    // await program.methods.createOrder(
-    //   ETH_coin, 
-    //   SOL_coin, 
-    //   43.586388,
-    //   3.7542,
-    //   {
-    //     accounts: {
-    //         order: order.publicKey,
-    //         trader: program.provider.wallet.publicKey,
-    //         systemProgram: anchor.web3.SystemProgram.programId,
-    //     },
-    //     signers: [order],
-    //   }).rpc();
     await program.rpc.createOrder(ETH_coin, SOL_coin, 43.586388, 3.7542, {
       accounts: {
         order: order.publicKey,

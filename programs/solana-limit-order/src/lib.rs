@@ -27,7 +27,7 @@ pub mod solana_limit_order {
         Ok(())
     }
     
-    pub fn delete_order(_ctx: Context<DeleteOrderContext>) -> ProgramResult {
+    pub fn delete_order(_ctx: Context<DeleteOrderContext>) -> Result {
         Ok(())
     }
 }
