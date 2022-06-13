@@ -26,6 +26,10 @@ pub mod solana_limit_order {
 
         Ok(())
     }
+    
+    pub fn delete_order(_ctx: Context<DeleteOrderContext>) -> ProgramResult {
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -39,10 +43,18 @@ pub struct CreateOrderContext<'info> {
 
     #[account(mut)]
     pub trader: Signer<'info>,
-    // /// CHECK:
-    // #[account(address = system_program::ID)]
-    // pub system_program: AccountInfo<'info>,
+    /// CHECK:
+    #[account(address = system_program::ID)]
+    pub system_program: AccountInfo<'info>,
 }
+
+#[derive(Accounts)]
+pub struct DeleteOrderContext<'info> {
+    #[account(mut, has_one = trader, close = trader)]
+    pub order: Account<'info, OrderAccount>,
+    pub trader: Signer<'info>,
+}
+
 
 #[account]
 pub struct OrderAccount {

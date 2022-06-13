@@ -11,6 +11,18 @@ describe("solana-limit-order", () => {
   const program = anchor.workspace.SolanaLimitOrder as Program<SolanaLimitOrder>;
   const SOL_coin = "0x41848d32f281383f214c69b7b248dc7c2e0a7374";
   const ETH_coin = "0x2170ed0880ac9a755fd29b2688956bd959f933f8";
+  const sendOrder = async (trader: any, sell_coin: string, buy_coin: string, limit_price: any, sell_amount: any ) => {
+    const order = anchor.web3.Keypair.generate();
+    await program.rpc.createOrder(sell_coin, buy_coin, limit_price, sell_amount, {
+      accounts: {
+        order: order.publicKey,
+        trader,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      },
+      signers: [order],
+    });
+    return order
+}
 
   it('can create a limit order', async () => {
     // Call the "create_order" instruction.
@@ -53,4 +65,22 @@ describe("solana-limit-order", () => {
     assert.equal(orderAccount.limit_price, 43.586388);
     assert.equal(orderAccount.sell_amount, 3.7542);
   });
+
+  it('can delete a order', async () => {
+    // Create a new order.
+    const trader = program.provider.wallet.publicKey;
+    const order = await sendOrder(trader, ETH_coin, SOL_coin, 43.5242, 10.3);
+
+    // Delete the order.
+    await program.rpc.deleteOrder({
+        accounts: {
+            order: order.publicKey,
+            trader,
+        },
+    });
+
+    // Ensure fetching the order account returns null.
+    const orderAccount = await program.account.order.fetchNullable(order.publicKey);
+    assert.ok(orderAccount === null);
+});
 });
