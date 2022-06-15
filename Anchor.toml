@@ -1,7 +1,7 @@
 [features]
 seeds = false
 [programs.localnet]
-solana_limit_order = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+solana_limit_order = "G161J9uEcaFkpcBYcinrZaCH2jhNaPNuP4fx64A2PUZL"
 
 [registry]
 url = "https://anchor.projectserum.com"
