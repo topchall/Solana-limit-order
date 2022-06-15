@@ -22,7 +22,7 @@ pub mod solana_limit_order {
         ctx: Context<CreateOrderContext>,
         maker_asset_address: String,
         taker_asset_address: String,
-        maker_address: String,
+        maker_address: Pubkey,
         maker_amount: u64,
         taker_amount: u64,
     ) -> Result<()> {
@@ -98,9 +98,9 @@ pub struct CreateOrderContext<'info> {
 
 #[derive(Accounts)]
 pub struct DeleteOrderContext<'info> {
-    #[account(mut, has_one = authority, close = authority)]
+    #[account(mut, has_one = maker, close = maker)]
     pub order: Account<'info, OrderAccount>,
-    pub authority: Signer<'info>,
+    pub maker: Signer<'info>,
 }
 
 #[account]
@@ -118,7 +118,7 @@ pub struct OrderAccount {
     
     pub taker_asset: String,
     
-    pub maker: String,
+    pub maker: Pubkey,
     
     // pub receiver: Pubkey,
     
