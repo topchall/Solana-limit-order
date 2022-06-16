@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
-use std::mem::size_of;
-use anchor_lang::solana_program::system_program;
+use anchor_spl::token::{self, CloseAccount, Mint, SetAuthority, TokenAccount, Transfer};
+use spl_token::instruction::AuthorityType;
 
 declare_id!("7GwRvvPGFVRwMRtQgHnTDKvzLS1oPDNCMUzH1b5qCm1N");
 
@@ -50,27 +50,6 @@ pub mod solana_limit_order {
     pub fn delete_order(_ctx: Context<DeleteOrderContext>) -> Result<()> {
         Ok(())
     }
-}
-
-#[derive(Accounts)]
-pub struct CreateStateContext<'info> {
-    #[account(
-        init,
-        seeds = [b"state".as_ref()],
-        bump,
-        payer = authority,
-        space = size_of::<StateAccount>() + 8
-    )]
-    pub state: Account<'info, StateAccount>,
-
-    #[account(mut)]
-    pub authority: Signer<'info>,
-
-    /// CHECK:
-    pub system_program: UncheckedAccount<'info>,
-
-    #[account(constraint = token_program.key == &token::ID)]
-    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
