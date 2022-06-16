@@ -8,15 +8,7 @@ declare_id!("7GwRvvPGFVRwMRtQgHnTDKvzLS1oPDNCMUzH1b5qCm1N");
 pub mod solana_limit_order {
     use super::*;
 
-    pub fn create_state(ctx: Context<CreateStateContext>) -> Result<()> {
-        let state = &mut ctx.accounts.state;
-
-        state.authority = ctx.accounts.authority.key();
-
-        state.salt_index = 1;
-
-        Ok(())
-    }
+    const ESCROW_PDA_SEED: &[u8] = b"escrow";
 
     pub fn create_order(
         ctx: Context<CreateOrderContext>,
@@ -26,7 +18,6 @@ pub mod solana_limit_order {
         maker_amount: u64,
         taker_amount: u64,
     ) -> Result<()> {
-        let state = &mut ctx.accounts.state;
 
         let order = &mut ctx.accounts.order;
 
@@ -37,7 +28,21 @@ pub mod solana_limit_order {
         order.making_amount = maker_amount;
         order.taking_amount = taker_amount;
 
-        state.salt_index += 1;
+
+        ctx.accounts.order.maker_amount = maker_amount;
+     
+        let (vault_authority, _vault_authority_bump) =
+            Pubkey::find_program_address(&[ESCROW_PDA_SEED], ctx.program_id);
+        token::set_authority(
+            ctx.accounts.into_set_authority_context(),
+            AuthorityType::AccountOwner,
+            Some(vault_authority),
+        )?;
+
+        token::transfer(
+            ctx.accounts.into_transfer_to_pda_context(),
+            ctx.accounts.order.maker_amount,
+        )?;
 
         Ok(())
     }
@@ -69,32 +74,34 @@ pub struct CreateStateContext<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(vault_account_bump: u8, initializer_amount: u64)]
 pub struct CreateOrderContext<'info> {
-    #[account(
-        mut,
-        seeds = [b"state".as_ref()],
-        bump
-    )]
-    pub state: Account<'info, StateAccount>,
-
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut, signer)]
+    pub maker: AccountInfo<'info>,
+    pub mint: Account<'info, Mint>,
     #[account(
         init,
-        seeds = [b"order".as_ref(), state.salt_index.to_be_bytes().as_ref()],
+        seeds = [b"token-seed".as_ref()],
         bump,
-        payer = authority,
-        space = size_of::<OrderAccount>() + 8
+        payer = maker,
+        token::mint = mint,
+        token::authority = maker,
     )]
-    pub order: Account<'info, OrderAccount>,
-
-    #[account(mut)]
-    pub authority: Signer<'info>,
-
-    /// CHECK:
-    pub system_program: UncheckedAccount<'info>,
-
-    #[account(constraint = token_program.key == &token::ID)]
-    pub token_program: Program<'info, Token>,
-}
+    pub vault_account: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        constraint = maker_make_token_account.amount >= maker_amount
+    )]
+    pub maker_make_token_account: Account<'info, TokenAccount>,
+    pub maker_taker_token_account: Account<'info, TokenAccount>,
+    #[account(zero)]
+    pub escrow_account: Box<Account<'info, OrderAccount>>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub system_program: AccountInfo<'info>,
+    pub rent: Sysvar<'info, Rent>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub token_program: AccountInfo<'info>,
 
 #[derive(Accounts)]
 pub struct DeleteOrderContext<'info> {
@@ -111,8 +118,6 @@ pub struct StateAccount {
 
 #[account]
 pub struct OrderAccount {
-    
-    pub salt: u64,
     
     pub maker_asset: String,
     
